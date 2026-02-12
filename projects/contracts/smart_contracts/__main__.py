@@ -130,8 +130,6 @@ def build(output_dir: Path, contract_path: Path) -> Path:
         for file_name in app_spec_file_names:
             client_file = file_name
             print(file_name)
-            client_file = file_name
-            print(file_name)
             
             # Construct path to algokitgen-py in the current venv
             # We use sys.prefix to find the bin folder
