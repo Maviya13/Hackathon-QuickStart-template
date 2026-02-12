@@ -130,28 +130,42 @@ def build(output_dir: Path, contract_path: Path) -> Path:
         for file_name in app_spec_file_names:
             client_file = file_name
             print(file_name)
+            client_file = file_name
+            print(file_name)
+            
+            # Construct path to algokitgen-py in the current venv
+            # We use sys.prefix to find the bin folder
+            if sys.platform == "win32":
+                algokitgen_cmd = Path(sys.prefix) / "Scripts" / "algokitgen-py.exe"
+            else:
+                algokitgen_cmd = Path(sys.prefix) / "bin" / "algokitgen-py"
+
+            if not algokitgen_cmd.exists():
+                 # Fallback to trying to run it as a module if binary missing
+                 cmd = [sys.executable, "-m", "algokit_client_generator"]
+            else:
+                 cmd = [str(algokitgen_cmd)]
+
+            # Pass the specific input file (ARC56) and output path
+            cmd.extend([
+                str(output_dir / file_name),
+                "--output",
+                str(_get_output_path(output_dir, deployment_extension))
+            ])
+
+            logger.info(f"Running client generator: {' '.join(cmd)}")
+            
             generate_result = subprocess.run(
-                [
-                    "algokit",
-                    "generate",
-                    "client",
-                    str(output_dir),
-                    "--output",
-                    str(_get_output_path(output_dir, deployment_extension)),
-                ],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
             )
             if generate_result.returncode:
-                if "No such command" in generate_result.stdout:
-                    raise Exception(
-                        "Could not generate typed client, requires AlgoKit 2.0.0 or later. Please update AlgoKit"
-                    )
-                else:
-                    raise Exception(
-                        f"Could not generate typed client:\n{generate_result.stdout}"
-                    )
+                raise Exception(
+                    f"Could not generate typed client:\n{generate_result.stdout}"
+                )
+
     if client_file:
         return output_dir / client_file
     return output_dir
